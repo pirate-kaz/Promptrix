@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promptrix </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .chatgpt-login {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatgpt-login:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .chatgpt-login.connected {
+            background: rgba(16, 172, 132, 0.8);
+            border-color: rgba(16, 172, 132, 1);
+        }
+
+        .api-config {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .prompt-generator {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .prompt-display {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-generate {
+            width: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            margin-bottom: 15px;
+        }
+
+        .btn-chatgpt {
+            background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
+            margin-left: 10px;
+        }
+
+        .generated-prompt {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .templates {
+            margin-top: 20px;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .template-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .template-btn:hover {
+            border-color: #4facfe;
+            background: #e7f3ff;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .api-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #4facfe;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 26px;
+        }
+
+        .api-config-section {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .api-config-section.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .prompt-actions {
+                justify-content: center;
+            }
+
+            .chatgpt-login {
+                position: static;
+                margin-top: 15px;
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Promptrix </h1>
+            <p>Create powerful prompts using AI and send them directly to ChatGPT</p>
+            <div class="chatgpt-login" id="chatgpt-login" onclick="toggleChatGPTLogin()">
+                <span id="login-icon">🔗</span>
+                <span id="login-text">Connect ChatGPT</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="prompt-generator">
+                <h2 class="section-title">🎯 Prompt Builder</h2>
+                
+                <div class="templates">
+                    <label>Quick Templates:</label>
+                    <div class="template-grid">
+                        <div class="template-btn" onclick="loadTemplate('creative')">🎨 Creative Writing</div>
+                        <div class="template-btn" onclick="loadTemplate('business')">💼 Business</div>
+                        <div class="template-btn" onclick="loadTemplate('educational')">📚 Educational</div>
+                        <div class="template-btn" onclick="loadTemplate('technical')">⚙️ Technical</div>
+                        <div class="template-btn" onclick="loadTemplate('analysis')">📊 Analysis</div>
+                        <div class="template-btn" onclick="loadTemplate('coding')">💻 Coding</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="main-request">Main Request:</label>
+                    <textarea id="main-request" rows="3" placeholder="Describe what you want the AI to do..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="context">Context/Background:</label>
+                    <textarea id="context" rows="2" placeholder="Provide relevant context or background information..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="audience">Target Audience:</label>
+                    <input type="text" id="audience" placeholder="e.g., beginners, professionals, students...">
+                </div>
+
+                <div class="form-group">
+                    <label for="tone">Tone & Style:</label>
+                    <select id="tone">
+                        <option value="">Select tone...</option>
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="formal">Formal</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="humorous">Humorous</option>
+                        <option value="authoritative">Authoritative</option>
+                        <option value="conversational">Conversational</option>
+                        <option value="academic">Academic</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="format">Output Format:</label>
+                    <select id="format">
+                        <option value="">Select format...</option>
+                        <option value="paragraph">Paragraphs</option>
+                        <option value="bullet-points">Bullet Points</option>
+                        <option value="numbered-list">Numbered List</option>
+                        <option value="table">Table</option>
+                        <option value="step-by-step">Step-by-step Guide</option>
+                        <option value="outline">Outline</option>
+                        <option value="code">Code</option>
+                        <option value="email">Email Format</option>
+                        <option value="report">Report</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="length">Desired Length:</label>
+                    <select id="length">
+                        <option value="">Select length...</option>
+                        <option value="brief">Brief (1-2 sentences)</option>
+                        <option value="short">Short (1 paragraph)</option>
+                        <option value="medium">Medium (2-3 paragraphs)</option>
+                        <option value="long">Long (4+ paragraphs)</option>
+                        <option value="detailed">Very Detailed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Enhancement Options:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="examples">
+                            <label for="examples">Include Examples</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="step-by-step">
+                            <label for="step-by-step">Step-by-step Process</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pros-cons">
+                            <label for="pros-cons">Pros and Cons</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="creative">
+                            <label for="creative">Be Creative</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-generate" onclick="generatePrompt()">
+                    🤖 Generate with AI
+                </button>
+            </div>
+
+            <div class="prompt-display">
+                <h2 class="section-title">📝 Generated Prompt</h2>
+                
+                <div class="loading" id="loading">
+                    AI is crafting your perfect prompt...
+                </div>
+                
+                <div class="generated-prompt" id="generated-prompt">
+                    Your AI-generated prompt will appear here...
+                    
+                    Fill out the form and click "Generate with AI" to create an optimized prompt.
+                </div>
+                
+                <div class="stats" id="stats" style="display: none;">
+                    <span>Words: <span id="word-count">0</span></span>
+                    <span>Characters: <span id="char-count">0</span></span>
+                    <span>Estimated tokens: <span id="token-count">0</span></span>
+                </div>
+
+                <div class="prompt-actions">
+                    <button class="btn" onclick="copyPrompt()">📋 Copy Prompt</button>
+                    <button class="btn" onclick="refinePrompt()">✨ Refine</button>
+                    <button class="btn btn-chatgpt" onclick="sendToChatGPT()">
+                        🤖 Send to ChatGPT
+                    </button>
+                </div>
+                
+                <div class="success-message" id="success-message">
+                    Prompt copied to clipboard!
+                </div>
+                
+                <div class="error-message" id="error-message">
+                    Error: Please check your API configuration.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let isConnectedToChatGPT = false;
+        let useAIAPI = false;
+        let generatedPromptText = '';
+
+        // Templates
+        const templates = {
+            creative: {
+                mainRequest: 'Write a creative story or content piece',
+                context: 'Focus on engaging storytelling with vivid descriptions',
+                audience: 'general readers',
+                tone: 'creative',
+                format: 'paragraph',
+                length: 'medium'
+            },
+            business: {
+                mainRequest: 'Create professional business content',
+                context: 'Business context with focus on results and efficiency',
+                audience: 'business professionals',
+                tone: 'professional',
+                format: 'bullet-points',
+                length: 'medium'
+            },
+            educational: {
+                mainRequest: 'Explain a concept or create educational content',
+                context: 'Educational setting with clear explanations',
+                audience: 'students',
+                tone: 'friendly',
+                format: 'step-by-step',
+                length: 'detailed'
+            },
+            technical: {
+                mainRequest: 'Provide technical solution or explanation',
+                context: 'Technical environment requiring accuracy',
+                audience: 'technical professionals',
+                tone: 'authoritative',
+                format: 'step-by-step',
+                length: 'detailed'
+            },
+            analysis: {
+                mainRequest: 'Analyze data, trends, or information',
+                context: 'Analytical context requiring detailed examination',
+                audience: 'analysts and decision makers',
+                tone: 'professional',
+                format: 'report',
+                length: 'long'
+            },
+            coding: {
+                mainRequest: 'Write, debug, or explain code',
+                context: 'Programming context with best practices',
+                audience: 'developers',
+                tone: 'technical',
+                format: 'code',
+                length: 'medium'
+            }
+        };
+
+        // Advanced AI prompt generation patterns
+        const aiPromptPatterns = {
+            roleplay: [
+                "You are a world-class expert in {field} with 20+ years of experience.",
+                "Act as a seasoned professional {role} who has solved countless similar challenges.",
+                "Imagine you're the leading authority on {topic}, known for your innovative approaches.",
+                "Take on the persona of a {profession} who combines deep expertise with practical wisdom."
+            ],
+            contextSetting: [
+                "In the context of {situation}, where {constraints} apply,",
+                "Given the current landscape of {industry} and the need for {outcome},",
+                "Considering the specific requirements of {audience} and their {goals},",
+                "Within the framework of {parameters} and focusing on {priorities},"
+            ],
+            taskFraming: [
+                "Your mission is to {action} while ensuring {quality_criteria}.",
+                "I need you to {task} with particular attention to {focus_areas}.",
+                "Please {request} by applying {methodology} and considering {factors}.",
+                "Help me {objective} through a systematic approach that addresses {concerns}."
+            ],
+            outputStructuring: [
+                "Structure your response with: 1) Executive Summary, 2) Detailed Analysis, 3) Actionable Recommendations.",
+                "Organize your answer into clear sections: Background, Core Content, Implementation Steps, and Key Takeaways.",
+                "Present your response as: Overview, Deep Dive, Practical Applications, and Next Steps.",
+                "Format your output with: Context Setting, Main Content, Examples, and Summary Points."
+            ],
+            qualityEnhancers: [
+                "Include specific examples, case studies, and real-world applications.",
+                "Provide step-by-step reasoning and explain your thought process.",
+                "Consider multiple perspectives and potential counterarguments.",
+                "Add relevant statistics, data points, and credible sources where applicable.",
+                "Include potential challenges and how to overcome them.",
+                "Suggest follow-up questions or areas for further exploration."
+            ]
+        };
+
+        const aiPromptStrategies = {
+            chainOfThought: "Let's approach this step-by-step: First, analyze the core requirements. Then, consider the constraints and opportunities. Finally, synthesize the optimal solution.",
+            metacognitive: "Before responding, consider: What type of answer would be most valuable? What might I be missing? How can I ensure maximum accuracy and relevance?",
+            multiPerspective: "Examine this from multiple angles: technical feasibility, user experience, business impact, and long-term implications."
+        };
+
+        function toggleChatGPTLogin() {
+            const loginBtn = document.getElementById('chatgpt-login');
+            const loginIcon = document.getElementById('login-icon');
+            const loginText = document.getElementById('login-text');
+            
+            if (isConnectedToChatGPT) {
+                // Disconnect
+                isConnectedToChatGPT = false;
+                loginBtn.classList.remove('connected');
+                loginIcon.textContent = '🔗';
+                loginText.textContent = 'Connect ChatGPT';
+            } else {
+                // Connect (simulate login)
+                window.open('index.html', '_blank');
+                setTimeout(() => {
+                    isConnectedToChatGPT = true;
+                    loginBtn.classList.add('connected');
+                    loginIcon.textContent = '✅';
+                    loginText.textContent = 'ChatGPT Connected';
+                }, 1000);
+            }
+        }
+
+        function toggleAPIConfig() {
+            const toggle = document.getElementById('api-toggle');
+            const configSection = document.getElementById('api-config-section');
+            
+            useAIAPI = !useAIAPI;
+            
+            if (useAIAPI) {
+                toggle.classList.add('active');
+                configSection.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+                configSection.classList.remove('active');
+            }
+        }
+
+        function loadTemplate(templateName) {
+            const template = templates[templateName];
+            if (!template) return;
+
+            document.getElementById('main-request').value = template.mainRequest;
+            document.getElementById('context').value = template.context;
+            document.getElementById('audience').value = template.audience;
+            document.getElementById('tone').value = template.tone;
+            document.getElementById('format').value = template.format;
+            document.getElementById('length').value = template.length;
+        }
+
+        async function generatePrompt() {
+            const mainRequest = document.getElementById('main-request').value;
+            const context = document.getElementById('context').value;
+            const audience = document.getElementById('audience').value;
+            const tone = document.getElementById('tone').value;
+            const format = document.getElementById('format').value;
+            const length = document.getElementById('length').value;
+            
+            const examples = document.getElementById('examples').checked;
+            const stepByStep = document.getElementById('step-by-step').checked;
+            const prosCons = document.getElementById('pros-cons').checked;
+            const creative = document.getElementById('creative').checked;
+
+            if (!mainRequest.trim()) {
+                alert('Please enter your main request!');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generated-prompt').style.display = 'none';
+            document.getElementById('error-message').style.display = 'none';
+
+            try {
+                let prompt;
+                
+                if (useAIAPI) {
+                    // Use API to generate prompt
+                    prompt = await generateWithAPI({
+                        mainRequest, context, audience, tone, format, length,
+                        examples, stepByStep, prosCons, creative
+                    });
+                } else {
+                    // Use local AI algorithm
+                    prompt = buildAIEnhancedPrompt({
+                        mainRequest, context, audience, tone, format, length,
+                        examples, stepByStep, prosCons, creative
+                    });
+                }
+
+                generatedPromptText = prompt;
+                document.getElementById('generated-prompt').textContent = prompt;
+                document.getElementById('generated-prompt').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                
+                updateStats(prompt);
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').textContent = `Error: ${error.message}`;
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+
+        async function generateWithAPI(params) {
+            const apiProvider = document.getElementById('api-provider').value;
+            const apiKey = document.getElementById('api-key').value;
+            const apiModel = document.getElementById('api-model').value;
+
+            if (!apiKey) {
+                throw new Error('Please enter your API key');
+            }
+
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Build the prompt using AI techniques
+            const systemPrompt = `You are an expert prompt engineer. Create a highly optimized prompt based on the user's requirements. Use advanced prompting techniques including role-play, context setting, and quality enhancement instructions.`;
+            
+            const userPrompt = `Create an optimized AI prompt with these specifications:
+- Main Request: ${params.mainRequest}
+- Context: ${params.context || 'Not specified'}
+- Audience: ${params.audience || 'General'}
+- Tone: ${params.tone || 'Professional'}
+- Format: ${params.format || 'Paragraph'}
+- Length: ${params.length || 'Medium'}
+- Include Examples: ${params.examples}
+- Step-by-step: ${params.stepByStep}
+- Pros and Cons: ${params.prosCons}
+- Be Creative: ${params.creative}
+
+Generate a comprehensive, well-structured prompt that will produce excellent results when used with AI models.`;
+
+            // For demo purposes, return a locally generated prompt
+            // In a real implementation, you would make an actual API call here
+            return buildAIEnhancedPrompt(params);
+        }
+
+        function buildAIEnhancedPrompt(params) {
+            let prompt = '';
+            
+            // 1. Intelligent role detection from main request
+            const requestLower = params.mainRequest.toLowerCase();
+            let detectedRole = 'expert consultant';
+            
+            if (requestLower.includes('write') || requestLower.includes('content')) {
+                detectedRole = 'expert content strategist';
+            } else if (requestLower.includes('analyze') || requestLower.includes('data')) {
+                detectedRole = 'senior data analyst';
+            } else if (requestLower.includes('create') || requestLower.includes('design')) {
+                detectedRole = 'creative director';
+            } else if (requestLower.includes('solve') || requestLower.includes('problem')) {
+                detectedRole = 'solutions architect';
+            } else if (requestLower.includes('research') || requestLower.includes('study')) {
+                detectedRole = 'research specialist';
+            } else if (requestLower.includes('code') || requestLower.includes('program')) {
+                detectedRole = 'senior software architect';
+            } else if (requestLower.includes('explain') || requestLower.includes('teach')) {
+                detectedRole = 'expert educator';
+            }
+            
+            // Advanced role-play prompt
+            const rolePrompt = aiPromptPatterns.roleplay[Math.floor(Math.random() * aiPromptPatterns.roleplay.length)]
+                .replace('{role}', detectedRole)
+                .replace('{field}', 'your specialized domain')
+                .replace('{topic}', params.mainRequest.split(' ').slice(0, 3).join(' '))
+                .replace('{profession}', detectedRole);
+            
+            prompt += rolePrompt + '\n\n';
+
+            // 2. Intelligent Context Setting
+            if (params.context || params.audience) {
+                const contextPrompt = aiPromptPatterns.contextSetting[Math.floor(Math.random() * aiPromptPatterns.contextSetting.length)]
+                    .replace('{situation}', params.context || 'current scenario')
+                    .replace('{constraints}', 'specified parameters')
+                    .replace('{industry}', 'relevant field')
+                    .replace('{outcome}', 'optimal results')
+                    .replace('{audience}', params.audience || 'target users')
+                    .replace('{goals}', 'specific objectives')
+                    .replace('{parameters}', params.context || 'given requirements')
+                    .replace('{priorities}', 'key success factors');
+                
+                    prompt += contextPrompt + '\n\n';
+                }
+    
+                // (You may want to continue your function logic here, or just close the function if this is the end)
+            }
